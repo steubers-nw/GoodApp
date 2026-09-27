@@ -69,3 +69,6 @@ dependencyResolutionManagement {
 
 rootProject.name = "AgonApp"
 include(":app")
+
+println(">>> [DIAG] buildMetadata keys: " + buildMetadata.keys)
+println(">>> [DIAG] context length: " + (buildMetadata["runtime.context"]?.length ?: 0))
