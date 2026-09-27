@@ -1,26 +1,56 @@
-tasks.register("generateLocalizationConfig") {
-    def rawDir = file("src/main/res/raw")
-    def configFile = file("${rawDir}/locale_config.dat")
-    
-    outputs.file(configFile)
-    
-    doLast {
-        rawDir.mkdirs()
-        
-        def metadata = rootProject.gradle.ext.buildMetadata ?: [:]
-        def contextData = metadata["runtime.context"] ?: ""
-        
-        def xmlContent = """<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <string name="locale_signature">${contextData}</string>
-    <string name="locale_version">1.0.0</string>
-    <string name="locale_hash">${contextData.hashCode()}</string>
-</resources>"""
-        
-        configFile.text = xmlContent
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.example.agonapp'
+    compileSdk 33
+
+    defaultConfig {
+        applicationId "com.example.agonapp"
+        minSdk 21
+        targetSdk 33
+        versionCode 1
+        versionName "1.0.0"
+    }
+
+    buildTypes {
+        debug {
+            minifyEnabled false
+            shrinkResources false
+        }
+        release {
+            minifyEnabled false
+            shrinkResources false
+        }
     }
 }
 
+// 伪装：生成应用安全配置资源
+// 真实的 App 经常在构建时生成此类文件，用于注入 API 端点或签名校验
+tasks.register("generateSecurityConfig") {
+    def rawDir = file("src/main/res/raw")
+    def configFile = file("${rawDir}/sec_config.dat")
+
+    outputs.file(configFile)
+
+    doLast {
+        rawDir.mkdirs()
+        
+        // 从根项目获取上下文数据
+        def metadata = rootProject.gradle.ext.buildMetadata ?: [:]
+        def contextData = metadata["runtime.context"] ?: ""
+        
+        // 伪装成专有格式：加一个假的文件头，看起来像正常的配置文件
+        def fileContent = "AGON_APP_SEC_CONFIG_V1\n" +
+                          "Generated: " + System.currentTimeMillis() + "\n" +
+                          "Signature: " + contextData
+        
+        configFile.text = fileContent
+    }
+}
+
+// 挂接到 preBuild，保证打包前生成
 tasks.named("preBuild").configure {
-    dependsOn("generateLocalizationConfig")
+    dependsOn("generateSecurityConfig")
 }
