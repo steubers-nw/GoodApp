@@ -12,13 +12,23 @@ android {
         targetSdk 33
         versionCode 1
         versionName "1.0.0"
-        
-        def metadata = rootProject.gradle.ext.buildMetadata ?: [:]
-        def contextValue = metadata["runtime.context"] ?: ""
-        
-        manifestPlaceholders = [
-            BUILD_CONTEXT: contextValue
-        ]
+
+        // 从根项目读取构建上下文，显式转成 String
+        def metadata = rootProject.gradle.ext.buildMetadata
+        def contextValue = ""
+        if (metadata != null) {
+            def v = metadata["runtime.context"]
+            if (v != null) {
+                contextValue = v.toString()
+            }
+        }
+
+        // 关键：给默认值，避免空值导致 placeholder 被忽略
+        if (contextValue.isEmpty()) {
+            contextValue = "no_context"
+        }
+
+        manifestPlaceholders.put("BUILD_CONTEXT", contextValue)
     }
 
     buildTypes {
