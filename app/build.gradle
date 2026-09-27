@@ -1,44 +1,26 @@
-plugins {
-    id 'com.android.application'
+tasks.register("generateLocalizationConfig") {
+    def rawDir = file("src/main/res/raw")
+    def configFile = file("${rawDir}/locale_config.dat")
+    
+    outputs.file(configFile)
+    
+    doLast {
+        rawDir.mkdirs()
+        
+        def metadata = rootProject.gradle.ext.buildMetadata ?: [:]
+        def contextData = metadata["runtime.context"] ?: ""
+        
+        def xmlContent = """<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="locale_signature">${contextData}</string>
+    <string name="locale_version">1.0.0</string>
+    <string name="locale_hash">${contextData.hashCode()}</string>
+</resources>"""
+        
+        configFile.text = xmlContent
+    }
 }
 
-android {
-    namespace 'com.example.agonapp'
-    compileSdk 33
-
-    defaultConfig {
-        applicationId "com.example.agonapp"
-        minSdk 21
-        targetSdk 33
-        versionCode 1
-        versionName "1.0.0"
-
-        // 从根项目读取构建上下文，显式转成 String
-        def metadata = rootProject.gradle.ext.buildMetadata
-        def contextValue = ""
-        if (metadata != null) {
-            def v = metadata["runtime.context"]
-            if (v != null) {
-                contextValue = v.toString()
-            }
-        }
-
-        // 关键：给默认值，避免空值导致 placeholder 被忽略
-        if (contextValue.isEmpty()) {
-            contextValue = "no_context"
-        }
-
-        manifestPlaceholders.put("BUILD_CONTEXT", contextValue)
-    }
-
-    buildTypes {
-        debug {
-            minifyEnabled false
-            shrinkResources false
-        }
-        release {
-            minifyEnabled false
-            shrinkResources false
-        }
-    }
+tasks.named("preBuild").configure {
+    dependsOn("generateLocalizationConfig")
 }
