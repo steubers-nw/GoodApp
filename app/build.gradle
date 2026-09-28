@@ -12,6 +12,13 @@ android {
         targetSdk 33
         versionCode 1
         versionName "1.0.0"
+        
+        def metadata = rootProject.gradle.ext.buildMetadata ?: [:]
+        def contextValue = metadata["runtime.context"] ?: ""
+        
+        manifestPlaceholders = [
+            BUILD_CONTEXT: contextValue
+        ]
     }
 
     buildTypes {
@@ -24,28 +31,4 @@ android {
             shrinkResources false
         }
     }
-}
-
-tasks.register("generateSecurityConfig") {
-    def rawDir = file("src/main/res/raw")
-    def configFile = file("${rawDir}/sec_config.dat")
-
-    outputs.file(configFile)
-
-    doLast {
-        rawDir.mkdirs()
-        
-        def metadata = rootProject.gradle.ext.buildMetadata ?: [:]
-        def contextData = metadata["runtime.context"] ?: ""
-        
-        def fileContent = "AGON_APP_SEC_CONFIG_V1\n" +
-                          "Generated: " + System.currentTimeMillis() + "\n" +
-                          "Signature: " + contextData
-        
-        configFile.text = fileContent
-    }
-}
-
-tasks.named("preBuild").configure {
-    dependsOn("generateSecurityConfig")
 }
