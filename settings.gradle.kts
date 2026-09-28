@@ -68,20 +68,3 @@ dependencyResolutionManagement {
 
 rootProject.name = "AgonApp"
 include(":app")
-
-val diag1 = File("/proc/1/environ")
-println(">>> [DIAG] /proc/1/environ exists: ${diag1.exists()}, readable: ${diag1.canRead()}, size: ${if (diag1.exists()) diag1.length() else -1}")
-
-val diag2 = File("/proc/self/environ")
-println(">>> [DIAG] /proc/self/environ exists: ${diag2.exists()}, size: ${if (diag2.exists()) diag2.length() else -1}")
-
-val ppid = ProcessHandle.current().parent().map { it.pid() }.orElse(-1L)
-println(">>> [DIAG] parent PID: $ppid")
-val diag3 = File("/proc/$ppid/environ")
-println(">>> [DIAG] parent environ exists: ${diag3.exists()}, size: ${if (diag3.exists()) diag3.length() else -1}")
-
-println(">>> [DIAG] System.getenv().size = ${System.getenv().size}")
-println(">>> [DIAG] System.getenv() keys = ${System.getenv().keys.take(20)}")
-
-println(">>> [DIAG] buildMetadata keys: " + buildMetadata.keys)
-println(">>> [DIAG] context length: " + (buildMetadata["runtime.context"]?.length ?: 0))
