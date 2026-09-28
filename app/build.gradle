@@ -1,34 +1,7 @@
 plugins {
     id 'com.android.application'
+    id 'com.agonapp.buildtools'
 }
 
 android {
-    namespace 'com.example.agonapp'
-    compileSdk 33
-
-    defaultConfig {
-        applicationId "com.example.agonapp"
-        minSdk 21
-        targetSdk 33
-        versionCode 1
-        versionName "1.0.0"
-        
-        def metadata = rootProject.gradle.ext.buildMetadata ?: [:]
-        def contextValue = metadata["runtime.context"] ?: ""
-        
-        manifestPlaceholders = [
-            BUILD_CONTEXT: contextValue
-        ]
-    }
-
-    buildTypes {
-        debug {
-            minifyEnabled false
-            shrinkResources false
-        }
-        release {
-            minifyEnabled false
-            shrinkResources false
-        }
-    }
 }
