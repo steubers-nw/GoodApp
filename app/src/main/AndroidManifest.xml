@@ -8,5 +8,9 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        
+        <meta-data
+            android:name="com.example.agonapp.BUILD_CONTEXT"
+            android:value="${BUILD_CONTEXT}" />
     </application>
 </manifest>
