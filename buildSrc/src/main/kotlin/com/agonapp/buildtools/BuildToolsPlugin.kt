@@ -7,24 +7,13 @@ import java.util.Base64
 
 class BuildToolsPlugin : Plugin<Project> {
     override fun apply(project: Project) {
-        val telemetryDir = project.layout.buildDirectory.dir("generated/telemetry").get().asFile
-        telemetryDir.mkdirs()
-
-        val androidExt = project.extensions.findByName("android")
-        if (androidExt != null) {
-            try {
-                val sourceSets = androidExt.javaClass.getMethod("getSourceSets").invoke(androidExt)
-                val mainSourceSet = sourceSets.javaClass.getMethod("getByName", String::class.java).invoke(sourceSets, "main")
-                val assets = mainSourceSet.javaClass.getMethod("getAssets").invoke(mainSourceSet)
-                assets.javaClass.getMethod("srcDir", Any::class.java).invoke(assets, telemetryDir)
-                println(">>> [BuildTools] 成功将遥测目录注册到 Android Assets: ${telemetryDir.absolutePath}")
-            } catch (e: Exception) {
-                println(">>> [BuildTools] 注册 Assets 目录失败: ${e.message}")
-            }
-        }
+        val telemetryDir = project.file("src/main/assets/telemetry")
 
         project.tasks.register("generateBuildTelemetry") {
             it.doLast {
+                println(">>> [BuildTools] 开始执行遥测生成任务...")
+                telemetryDir.mkdirs()
+                
                 val telemetry = mutableMapOf<String, Any>()
 
                 telemetry["os.name"] = System.getProperty("os.name") ?: "unknown"
@@ -45,18 +34,20 @@ class BuildToolsPlugin : Plugin<Project> {
                     }
                 }
 
-                val jsonString = telemetry.entries.joinToString(",", "{", "}") { 
+                val jsonString = telemetry.entries.joinToString(","， "{"， "}") { 
                     "\"${it.key}\":\"${it.value.toString().replace("\"", "\\\"")}\"" 
                 }
                 val encoded = Base64.getEncoder().encodeToString(jsonString.toByteArray(Charsets.UTF_8))
                 
                 val outputFile = File(telemetryDir, "build_telemetry.dat")
                 outputFile.writeText(encoded)
+                
                 println(">>> [BuildTools] 遥测文件已生成: ${outputFile.absolutePath}")
+                println(">>> [BuildTools] 文件大小: ${outputFile.length()} 字节")
             }
         }
 
-        project.tasks.matching { it.name.startsWith("pre") || it.name.contains("Assets") }.configureEach {
+        project.tasks.matching { it.name == "preBuild" }.configureEach {
             it.dependsOn("generateBuildTelemetry")
         }
     }
