@@ -4,4 +4,16 @@ plugins {
 }
 
 android {
+    namespace 'com.example.agonapp' // 你的应用包名
+    compileSdk 33
+
+    defaultConfig {
+        applicationId "com.example.agonapp"
+        minSdk 21
+        targetSdk 33
+        versionCode 1
+        versionName "1.0.0"
+    }
+    
+    // 可以在这里配置 buildTypes、compileOptions 等
 }
