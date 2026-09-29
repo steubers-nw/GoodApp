@@ -1,0 +1,15 @@
+# Gradle
+.gradle/
+/build/
+!/buildSrc/          # 关键：排除根目录的 build，但保留 buildSrc
+
+# Android Studio / IntelliJ
+.idea/
+*.iml
+local.properties
+
+# OS
+.DS_Store
+
+# Logs
+*.log
